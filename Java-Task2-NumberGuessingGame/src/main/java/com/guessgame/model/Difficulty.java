@@ -5,7 +5,7 @@ public enum Difficulty {
     EASY(1, 50, 10),
     MEDIUM(1, 100, 7),
     HARD(1, 200, 5);
-    
+
     private final int min;
     private final int max;
     private final int maxAttempts;
@@ -28,9 +28,4 @@ public enum Difficulty {
         return maxAttempts;
     }
 
-    @Override
-    public String toString() {
-        return name().charAt(0) + name().substring(1).toLowerCase()
-                + " (" + min + "-" + max + ", " + maxAttempts + " attempts)";
-    }
 }
