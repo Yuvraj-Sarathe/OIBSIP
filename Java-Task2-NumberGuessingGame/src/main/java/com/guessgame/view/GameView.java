@@ -29,6 +29,7 @@ public class GameView extends JFrame {
         JPanel topPanel = new JPanel(new FlowLayout());
         topPanel.add(new JLabel("Select Difficulty:"));
         difficultyComboBox = new JComboBox<>(Difficulty.values());
+        difficultyComboBox.setSelectedItem(Difficulty.MEDIUM);
         topPanel.add(difficultyComboBox);
         startButton = new JButton("Start Game");
         topPanel.add(startButton);
