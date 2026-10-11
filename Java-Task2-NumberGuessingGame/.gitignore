@@ -17,6 +17,7 @@ target/
 
 # IDE / editor
 .idea/
+Idea.md
 *.iml
 .vscode/
 .settings/
