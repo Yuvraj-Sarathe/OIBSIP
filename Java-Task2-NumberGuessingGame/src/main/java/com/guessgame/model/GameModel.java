@@ -18,9 +18,9 @@ public class GameModel {
     private int roundNumber;
     private boolean roundActive;
     private boolean lastRoundWon;
-    // Valid in-range guesses made this round, in order
+    // list of all guesses till now
     private final List<Integer> pastGuesses = new ArrayList<>();
-    // Narrowed search window: shrinks with each too-low/too-high hint
+    // to show the range of possible answers
     private int rangeLow;
     private int rangeHigh;
 
