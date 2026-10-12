@@ -6,7 +6,6 @@ import com.guessgame.model.GuessResult;
 import com.guessgame.view.GameView;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class GameController {
     private final GameModel model;
@@ -19,10 +18,9 @@ public class GameController {
     }
 
     private void initController() {
-        view.getStartButton().addActionListener(e -> startNewRound());
+        view.getMainButton().addActionListener(e -> startNewRound());
         view.getGuessButton().addActionListener(e -> processGuess());
         view.getGuessTextField().addActionListener(e -> processGuess());
-        view.getPlayAgainButton().addActionListener(e -> startNewRound());
     }
 
     private void startNewRound() {
@@ -30,20 +28,14 @@ public class GameController {
         model.startNewGame(selectedDifficulty);
 
         view.showRoundActive();
-        view.getRoundLabel().setText("Round " + model.getRoundNumber() + " (Range: " + model.getMin() + "–" + model.getMax() + ")");
-        view.getAttemptsLabel().setText("Attempts left: " + (model.getMaxAttempts() - model.getAttemptCount()));
-        view.getHintLabel().setText("Make your guess!");
+        view.setRoundDisplay(model.getRoundNumber(), model.getMin(), model.getMax());
+        view.setAttemptsDisplay(model.getAttemptCount(), model.getMaxAttempts());
+        view.setRangeDisplay(model.getRangeLow(), model.getRangeHigh(), model.getMin(), model.getMax());
+        view.clearGuessChips();
+        view.setSummaryText(" ");
+        view.showHint("Make your guess!", GameView.COLOR_IDLE);
         view.getGuessTextField().setText("");
-        view.getGuessTextField().requestFocus();
-        updateGuessTracking();
-    }
-
-    private void updateGuessTracking() {
-        view.setRangeDisplay("Possible range: " + model.getRangeLow() + " – " + model.getRangeHigh());
-        List<Integer> guesses = model.getPastGuesses();
-        view.setGuessesDisplay(guesses.isEmpty()
-                ? "Past guesses: none yet"
-                : "Past guesses: " + guesses.stream().map(String::valueOf).collect(Collectors.joining(", ")));
+        view.getGuessTextField().requestFocusInWindow();
     }
 
     private void processGuess() {
@@ -56,55 +48,92 @@ public class GameController {
         try {
             guess = Integer.parseInt(text);
         } catch (NumberFormatException e) {
-            view.getHintLabel().setText("Please enter a valid integer!");
+            view.showHint("Please enter a valid integer!", GameView.COLOR_LOST);
             return;
         }
 
         GuessResult result = model.submitGuess(guess);
-        int attemptsLeft = model.getMaxAttempts() - model.getAttemptCount();
-        view.getAttemptsLabel().setText("Attempts left: " + attemptsLeft);
         view.getGuessTextField().setText("");
-        view.getGuessTextField().requestFocus();
-
-        if (result == GuessResult.TOO_LOW || result == GuessResult.TOO_HIGH
-                || result == GuessResult.CORRECT || result == GuessResult.ATTEMPTS_EXCEEDED) {
-            updateGuessTracking();
-        }
+        view.getGuessTextField().requestFocusInWindow();
+        view.setAttemptsDisplay(model.getAttemptCount(), model.getMaxAttempts());
+        view.setRangeDisplay(model.getRangeLow(), model.getRangeHigh(), model.getMin(), model.getMax());
 
         switch (result) {
             case TOO_LOW:
-                view.getHintLabel().setText("Too Low!");
+                view.showHint("Too Low!", GameView.COLOR_TOO_LOW);
+                view.addGuessChip(guess + " ↑", GameView.COLOR_TOO_LOW);
                 break;
             case TOO_HIGH:
-                view.getHintLabel().setText("Too High!");
+                view.showHint("Too High!", GameView.COLOR_TOO_HIGH);
+                view.addGuessChip(guess + " ↓", GameView.COLOR_TOO_HIGH);
                 break;
-            case CORRECT: {
-                view.getHintLabel().setText("Correct! You won!");
-                String summary = "Round " + model.getRoundNumber()
-                        + " — guessed in " + model.getAttemptCount()
-                        + (model.getAttemptCount() == 1 ? " attempt" : " attempts");
-                view.getScoreHistoryLabel().setText(summary);
-                view.appendHistoryLine(summary);
-                view.showRoundOver();
+            case CORRECT:
+                view.showHint("Correct! You won!", GameView.COLOR_CORRECT);
+                view.addGuessChip(guess + " ✓", GameView.COLOR_CORRECT);
+                finishRound(true);
                 break;
-            }
             case OUT_OF_RANGE:
-                view.getHintLabel().setText("Out of range! Enter between " + model.getMin() + " and " + model.getMax());
+                view.showHint("Out of range! Enter " + model.getMin() + " – " + model.getMax(),
+                        GameView.COLOR_LOST);
                 break;
-            case ATTEMPTS_EXCEEDED: {
-                view.getHintLabel().setText("You Lost! Number was " + model.getTargetNumber());
-                String summary = "Round " + model.getRoundNumber()
-                        + " — lost; the number was " + model.getTargetNumber()
-                        + " (" + model.getAttemptCount()
-                        + (model.getAttemptCount() == 1 ? " attempt" : " attempts") + ")";
-                view.getScoreHistoryLabel().setText(summary);
-                view.appendHistoryLine(summary);
-                view.showRoundOver();
+            case ATTEMPTS_EXCEEDED:
+                view.showHint("You Lost! Number was " + model.getTargetNumber(), GameView.COLOR_LOST);
+                view.addGuessChip(guess + (guess < model.getTargetNumber() ? " ↑" : " ↓"),
+                        GameView.COLOR_LOST);
+                finishRound(false);
                 break;
-            }
             case GAME_OVER:
-                view.getHintLabel().setText("Round is over — press Play Again.");
+                view.showHint("Round is over — press Play Again.", GameView.COLOR_IDLE);
                 break;
         }
+    }
+
+    private void finishRound(boolean won) {
+        int attempts = model.getAttemptCount();
+        String summary = won
+                ? "Round " + model.getRoundNumber()
+                        + " — guessed in " + attempts
+                        + (attempts == 1 ? " attempt" : " attempts")
+                : "Round " + model.getRoundNumber()
+                        + " — lost; the number was " + model.getTargetNumber()
+                        + " (" + attempts
+                        + (attempts == 1 ? " attempt" : " attempts") + ")";
+        view.setSummaryText(summary);
+        refreshHistoryTable();
+        view.showRoundOver();
+    }
+
+    private void refreshHistoryTable() {
+        List<GameModel.RoundRecord> rounds = model.getFinishedRounds();
+        Object[][] rows = new Object[rounds.size()][4];
+        int wins = 0;
+        int losses = 0;
+        int best = Integer.MAX_VALUE;
+
+        for (int i = 0; i < rounds.size(); i++) {
+            GameModel.RoundRecord r = rounds.get(i);
+            rows[i] = new Object[]{
+                    r.roundNumber(),
+                    r.difficulty().getLabel(),
+                    r.won() ? "Won" : "Lost",
+                    r.attempts()
+            };
+            if (r.won()) {
+                wins++;
+                best = Math.min(best, r.attempts());
+            } else {
+                losses++;
+            }
+        }
+        view.setHistoryRows(rows);
+
+        int total = wins + losses;
+        int winRate = total == 0 ? 0 : Math.round(100.0f * wins / total);
+        view.setStatsText("Wins: " + wins
+                + " · Losses: " + losses
+                + " · Win rate: " + winRate + "%"
+                + " · Best: " + (best == Integer.MAX_VALUE
+                        ? "—"
+                        : best + (best == 1 ? " attempt" : " attempts")));
     }
 }
