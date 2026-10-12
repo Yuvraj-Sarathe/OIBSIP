@@ -28,4 +28,12 @@ public enum Difficulty {
         return maxAttempts;
     }
 
+    public String getLabel() {
+        return name().charAt(0) + name().substring(1).toLowerCase();
+    }
+
+    @Override
+    public String toString() {
+        return getLabel() + " (" + min + "–" + max + ", " + maxAttempts + " tries)";
+    }
 }

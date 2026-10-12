@@ -12,6 +12,11 @@ import java.util.concurrent.ThreadLocalRandom;
  */
 public class GameModel {
 
+    // Immutable summary of one finished round, used by the history table and stats
+    public record RoundRecord(int roundNumber, Difficulty difficulty,
+                              boolean won, int attempts, int targetNumber) {
+    }
+
     private Difficulty difficulty;
     private int targetNumber;
     private int attemptCount;
@@ -23,6 +28,8 @@ public class GameModel {
     // to show the range of possible answers
     private int rangeLow;
     private int rangeHigh;
+    // every finished round, kept across the whole session for the history table
+    private final List<RoundRecord> finishedRounds = new ArrayList<>();
 
     public GameModel() {
     }
@@ -60,14 +67,20 @@ public class GameModel {
         if (guess == targetNumber) {
             roundActive = false;
             lastRoundWon = true;
+            recordRound(true);
             return GuessResult.CORRECT;
         }
         if (attemptCount == difficulty.getMaxAttempts()) {
             roundActive = false;
             lastRoundWon = false;
+            recordRound(false);
             return GuessResult.ATTEMPTS_EXCEEDED;
         }
         return guess < targetNumber ? GuessResult.TOO_LOW : GuessResult.TOO_HIGH;
+    }
+
+    private void recordRound(boolean won) {
+        finishedRounds.add(new RoundRecord(roundNumber, difficulty, won, attemptCount, targetNumber));
     }
 
     public Difficulty getDifficulty() {
@@ -117,5 +130,10 @@ public class GameModel {
 
     public int getRangeHigh() {
         return rangeHigh;
+    }
+
+    // Read-only view of all finished rounds, oldest first
+    public List<RoundRecord> getFinishedRounds() {
+        return Collections.unmodifiableList(finishedRounds);
     }
 }
