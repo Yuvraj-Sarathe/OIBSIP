@@ -41,16 +41,28 @@ A desktop number guessing game written in Java Swing. The computer picks a rando
 | Hard   | 1 – 200 | 5  |
 
 ### Extras
-- **Possible range display**: shows the range that can still contain the number, updated after every guess
-- **Past guesses list**: shows every guess made in the current round
-- **Input checks**: non-numbers and guesses outside the range are rejected and don't use up an attempt
+- **Card layout**: game panel and history panel side by side, centered in the window; the app starts maximized (**F11** toggles fullscreen)
+- **Attempt bar**: green → amber → red progress bar showing `Attempt X / Y`
+- **Range bar**: a bar that visibly shrinks as the possible range narrows after every guess
+- **Guess chips**: every guess appears as a colored chip — blue ↑ (too low), orange ↓ (too high), green ✓ (correct)
+- **Color-coded hints**: `Too Low!` blue, `Too High!` orange, `Correct!` green, `You Lost!` red
+- **Round History table**: each finished round is logged as Round / Difficulty / Result / Attempts
+- **Session stats**: Wins, Losses, Win rate and Best attempts shown below the table
+- **Input checks**: only digits are accepted, and out-of-range guesses don't use up an attempt
 - **Change difficulty between rounds**: pick a new level before pressing Play Again
 
 ---
 
+## Controls
+- **Enter** — submit the typed guess (the main button is the default button)
+- **F11** — toggle between maximized and windowed mode
+- **Guess** button — same as pressing Enter
+
+---
+
 ## Tech Stack
-- **Language:** Java (JDK 8 or newer)
-- **GUI:** Java Swing
+- **Language:** Java (JDK 16 or newer)
+- **GUI:** Java Swing with the Nimbus look and feel
 - **Random numbers:** `java.util.concurrent.ThreadLocalRandom`
 - **Pattern:** Model–View–Controller (MVC)
 
@@ -115,10 +127,10 @@ java -cp out com.guessgame.Main
 ## How to Play
 1. Choose a difficulty: **Easy**, **Medium**, or **Hard**.
 2. Click **Start Game**.
-3. Type a number and press **Guess** (or **Enter**).
-4. Use the **Too High!** / **Too Low!** hints and the **Possible range** display to narrow it down.
-5. Find the number before your attempts run out.
-6. When the round ends, the result is added to **Round History**. Click **Play Again** to start another round, and change the difficulty first if you like.
+3. Type a number and press **Enter** (or the **Guess** button).
+4. Use the color-coded hints, the shrinking **range bar**, and the past-guess chips to narrow it down.
+5. Find the number before your attempts run out — the **attempt bar** turns amber, then red, as you run low.
+6. When the round ends, the result is added to the **Round History** table and the stats line updates. Click **Play Again** to start another round, and change the difficulty first if you like.
 
 ---
 
